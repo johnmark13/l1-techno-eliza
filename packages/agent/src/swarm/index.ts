@@ -8,7 +8,7 @@ import complianceOfficer from "./complianceOfficer";
 import socialMediaManager from "./socialMediaManager";
 import counselor from "./counselor";
 
-export const swarm: {character: Character, init: (runtime: IAgentRuntime) => Promise<void>}[] = [
+export const swarm: {character: Character, init: (runtime: IAgentRuntime) => void}[] = [
   complianceOfficer,
   communityManager,
   socialMediaManager,
