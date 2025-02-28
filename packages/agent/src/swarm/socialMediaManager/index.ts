@@ -2,6 +2,8 @@ import type { Character, IAgentRuntime, OnboardingConfig } from "@elizaos/core";
 import type { Guild } from 'discord.js';
 import dotenv from "dotenv";
 import twitterPostAction from "./actions/post";
+import twitterDeleteAction from "./actions/deletePost";
+import { generateImageAction } from "./actions/imageGeneration";
 import { initCharacter, initializeAllSystems } from "../settings";
 dotenv.config({ path: '../../.env' });
 
@@ -247,7 +249,16 @@ export const config: OnboardingConfig = {
       }
   }
 };
+
 export default {
   character,
-  init: (runtime: IAgentRuntime) => initCharacter({runtime, config, actions: [twitterPostAction]}),
+  init: (runtime: IAgentRuntime) => initCharacter({
+    runtime, 
+    config, 
+    actions: [
+      twitterPostAction, 
+      twitterDeleteAction,
+      generateImageAction
+    ]
+  }),
 };

@@ -28,22 +28,57 @@ export async function getUserServerRole(
     const worldId = stringToUuid(`${serverId}-${runtime.agentId}`);
     const world = await runtime.getWorld(worldId);
 
-    if (!world || !world.metadata?.roles) {
+    // Log the world metadata for debugging
+    logger.info(`Checking user role for userId: ${userId} in server: ${serverId}`);
+    logger.info(`World metadata: ${JSON.stringify(world?.metadata || {})}`);
+
+    if (!world || !world.metadata) {
+      logger.info(`No world or metadata found for worldId: ${worldId}`);
       return RoleName.NONE;
     }
 
     // Check both formats (UUID and original ID)
     const normalizedUserId = normalizeUserId(userId);
+    // Ensure userId is in UUID format before passing to generateTenantUserId
+    const tenantSpecificUserId = runtime.generateTenantUserId(stringToUuid(userId));
+    logger.info(`Normalized userId: ${normalizedUserId}, Original userId: ${userId}, Tenant-specific userId: ${tenantSpecificUserId}`);
 
-    if (world.metadata.roles[normalizedUserId]?.role) {
-      return world.metadata.roles[normalizedUserId].role as RoleName;
+    // First check if user is the owner by checking ownership metadata
+    if (world.metadata.ownership) {
+      const ownerId = world.metadata.ownership.ownerId;
+      logger.info(`Owner ID from metadata: ${ownerId}`);
+      
+      if (ownerId === normalizedUserId || ownerId === userId || ownerId === tenantSpecificUserId) {
+        logger.info(`User ${userId} is the owner of server ${serverId}`);
+        return RoleName.OWNER;
+      }
     }
 
-    // Also check original ID format
-    if (world.metadata.roles[userId]?.role) {
-      return world.metadata.roles[userId].role as RoleName;
+    // Check in roles object (could be string or object format)
+    if (world.metadata.roles) {
+      // Check for tenant-specific user ID first (most likely format)
+      if (world.metadata.roles[tenantSpecificUserId]) {
+        const role = world.metadata.roles[tenantSpecificUserId];
+        logger.info(`Found role for tenant-specific ID ${tenantSpecificUserId}: ${role}`);
+        return typeof role === 'string' ? role as RoleName : RoleName.NONE;
+      }
+      
+      // Check for normalized user ID
+      if (world.metadata.roles[normalizedUserId]) {
+        const role = world.metadata.roles[normalizedUserId];
+        logger.info(`Found role for normalized ID ${normalizedUserId}: ${role}`);
+        return typeof role === 'string' ? role as RoleName : RoleName.NONE;
+      }
+      
+      // Check for original user ID
+      if (world.metadata.roles[userId]) {
+        const role = world.metadata.roles[userId];
+        logger.info(`Found role for original ID ${userId}: ${role}`);
+        return typeof role === 'string' ? role as RoleName : RoleName.NONE;
+      }
     }
 
+    logger.info(`No role found for user ${userId} in server ${serverId}`);
     return RoleName.NONE;
   } catch (error) {
     logger.error(`Error getting user role: ${error}`);
@@ -254,12 +289,76 @@ const twitterPostAction: Action = {
         }
       }
 
-      // Prepare response content
-      const responseContent: Content = {
-        text: `I'll tweet this:\n\n${cleanTweet}`,
+      // Prepare response content with proper typing
+      const responseContent: Content & { imageUrl?: string } = {
+        text: `Here's a tweet I've drafted based on our conversation:\n\n"${cleanTweet}"`,
         action: "TWITTER_POST",
         source: message.content.source,
       };
+
+      // Check if there's a stored image for this server
+      let imageData: { url: string; description: string; name?: string; timestamp: number } | null = null;
+
+      // First check if the message mentions a specific image by name
+      const imageMentionMatch = message.content.text.match(/(?:with|using|include|attach)\s+(?:the\s+)?(?:image|picture)\s+(?:called|named)?\s*["']?([^"'.,!?]+)["']?/i);
+      if (imageMentionMatch && imageMentionMatch[1]) {
+        const requestedImageName = imageMentionMatch[1].trim();
+        const safeImageName = requestedImageName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        
+        try {
+          // Try to get the image by name
+          const namedImageData = await runtime.cacheManager.get<string>(`social_media_image_${serverId}_${safeImageName}`);
+          if (namedImageData) {
+            imageData = JSON.parse(namedImageData) as { url: string; description: string; name: string; timestamp: number };
+            logger.info(`Found image by name "${requestedImageName}": ${imageData.url}`);
+          } else {
+            // If not found by exact name, try to find the most recent image
+            const cachedImageData = await runtime.cacheManager.get<string>(`social_media_image_${serverId}`);
+            if (cachedImageData) {
+              const parsedData = JSON.parse(cachedImageData);
+              if (parsedData && typeof parsedData === 'object' && 'url' in parsedData && typeof parsedData.url === 'string') {
+                imageData = parsedData as { url: string; description: string; name?: string; timestamp: number };
+                logger.info(`Could not find image named "${requestedImageName}", using most recent image instead: ${imageData.url}`);
+              }
+            }
+          }
+        } catch (error) {
+          logger.error(`Error retrieving image by name: ${error}`);
+        }
+      } else {
+        // Check for user-uploaded image URL in the message
+        const urlMatch = message.content.text.match(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)/i);
+        if (urlMatch && urlMatch[0]) {
+          const imageUrl = urlMatch[0];
+          logger.info(`Found user-uploaded image URL in message: ${imageUrl}`);
+          imageData = {
+            url: imageUrl,
+            description: "User-provided image",
+            timestamp: Date.now()
+          };
+        } else {
+          // If no specific image mentioned or URL provided, try to get the most recent image
+          try {
+            const cachedImageData = await runtime.cacheManager.get<string>(`social_media_image_${serverId}`);
+            if (cachedImageData) {
+              const parsedData = JSON.parse(cachedImageData);
+              if (parsedData && typeof parsedData === 'object' && 'url' in parsedData && typeof parsedData.url === 'string') {
+                imageData = parsedData as { url: string; description: string; name?: string; timestamp: number };
+                logger.info(`Using most recent image: ${imageData.url}`);
+              }
+            }
+          } catch (error) {
+            logger.error(`Error retrieving cached image: ${error}`);
+          }
+        }
+      }
+
+      // Add image context to the response if an image was found
+      if (imageData) {
+        const imageName = imageData.name ? `"${imageData.name}"` : "the attached image";
+        responseContent.text += `\n\nI'll attach ${imageName} to this tweet.`;
+        responseContent.imageUrl = imageData.url;
+      }
 
       // Register approval task
       runtime.registerTask({
@@ -279,9 +378,24 @@ const twitterPostAction: Action = {
           // Initialize/get Twitter client
           const client = await ensureTwitterClient(runtime, serverId, vals);
 
-          const result = await client.client.twitterClient.sendTweet(
-            cleanTweet
-          );
+          // Create tweet with or without media
+          let result;
+          if (imageData && imageData.url) {
+            // Upload the image and get the media ID
+            const mediaId = await client.client.twitterClient.uploadMedia(imageData.url);
+            
+            // Create tweet with media
+            result = await client.client.twitterClient.sendTweet({
+              text: cleanTweet,
+              media: {
+                media_ids: [mediaId]
+              }
+            });
+          } else {
+            // Create tweet without media
+            result = await client.client.twitterClient.sendTweet(cleanTweet);
+          }
+
           // result is a response object, get the data from it-- body is a readable stream
           const data = await result.json();
 
