@@ -35,8 +35,7 @@ const character: Character = {
   ],
   settings: {},
   secrets: {
-    DISCORD_APPLICATION_ID:
-      process.env.COMPLIANCE_OFFICER_DISCORD_APPLICATION_ID,
+    DISCORD_APPLICATION_ID: process.env.COMPLIANCE_OFFICER_DISCORD_APPLICATION_ID,
     DISCORD_API_TOKEN: process.env.COMPLIANCE_OFFICER_DISCORD_API_TOKEN,
   },
   messageExamples: [
