@@ -9,10 +9,10 @@ import socialMediaManager from "./socialMediaManager";
 import counselor from "./counselor";
 
 export const swarm: {character: Character, init: (runtime: IAgentRuntime) => void}[] = [
-  complianceOfficer,
-  communityManager,
+  // complianceOfficer,
+  // communityManager,
   socialMediaManager,
-  counselor,
+  // counselor,
 ];
 
 export default swarm;
