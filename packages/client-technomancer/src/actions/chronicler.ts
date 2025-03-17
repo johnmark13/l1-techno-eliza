@@ -82,7 +82,7 @@ export const Chronicler: Action = {
         const response = await generateMessageResponse({
             runtime: runtime,
             context,
-            modelClass: ModelClass.SMALL,
+            modelClass: ModelClass.LARGE,
         });
 
         //here we could actually do somethin more novel...
