@@ -3,6 +3,17 @@ import { TechnomancerClient } from "./technomancer-client";
 import { SupabaseProvider } from "./providers/supabase.provider";
 import { validateTechnomancerConfig } from "./environment";
 
+export enum CHRONICLE_EVENT {
+    NONE,
+    TECHNO_BIRTH,
+    TECHNO_TX,
+    TECHNO_NAME,
+    TECHNO_DESCRIBE,
+    LOCATION_NAME,
+    LOCATION_DESCRIBE,
+    MOVE
+}
+
 export class TechnomancerAgentClient implements Client {
     name = "technomancer";
     client: TechnomancerClient;
@@ -35,7 +46,7 @@ export class TechnomancerAgentClient implements Client {
         };
     }
 
-     createMemory = async (block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, name?:string): Promise<string> => {
+     createMemory = async (event: CHRONICLE_EVENT, block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, name?:string): Promise<string> => {
         const userId = technomancerId ? stringToUuid(technomancerId) : this.agent;
         const roomId = stringToUuid(locationId);
 
@@ -80,6 +91,7 @@ export class TechnomancerAgentClient implements Client {
             block: block,
             technomancerId: technomancerId,
             locationId: locationId,
+            event: event
         });
 
         let message = null as Content | null;

@@ -23,7 +23,7 @@ import { technomancerAbi } from "./chain/Technomancer";
 import { laminateLocationAbi } from "./chain/LaminateLocation";
 import { SupabaseProvider } from "./providers/supabase.provider";
 import { TechCombinationDescription, TechCombinationName, TechLocation, TechLocationDescription, TechLocationHistory, TechLocationPresent, TechLocationTransfer, TechMetadata, TechSigil, TechTechnomancer, TechTechnomancerHistory, TechTechnomancerTransfer, TechType, TechWisdom } from "./internal-types";
-import { TechnomancerAgentClient } from "./technomancer-agent-client";
+import { CHRONICLE_EVENT, TechnomancerAgentClient } from "./technomancer-agent-client";
 
 //0. Model tokens at location
 //1. Firstly setup ownership of tech and locations
@@ -52,14 +52,14 @@ export class TechnomancerClient {
     private unwatchTech: () => void;
     private unwatchLoc: () => void;
 
-    private memoryMaker: (block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, name?: string) => Promise<string>;
+    private memoryMaker: (event: CHRONICLE_EVENT, block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, name?: string) => Promise<string>;
 
     constructor(
       supabaseProvider: SupabaseProvider,
       secret: string,
       technoAddress: string,
       locationAddress: string,
-      memoryMaker: (block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, name?: string) => Promise<string>
+      memoryMaker: (event: CHRONICLE_EVENT, block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, name?: string) => Promise<string>
     ) {
         this.memoryMaker = memoryMaker;
         this.supabaseProvider = supabaseProvider;
@@ -541,7 +541,7 @@ export class TechnomancerClient {
           }
         }
 
-        await this.memoryMaker(block, techLoc.id, owner, whatHappened, insertedId);
+        await this.memoryMaker(CHRONICLE_EVENT.TECHNO_BIRTH, block, techLoc.id, owner, whatHappened, insertedId);
       }
       catch (error) {
         elizaLogger.error(`Now we're out of sorts, from block ${block} because ${error}`);
@@ -677,7 +677,7 @@ export class TechnomancerClient {
         await this.supabaseProvider.addLocationHistory(lh);
 
         let whatHappened = `This Location has been renamed ${location.name}`;
-        await this.memoryMaker(block, location.id, location.owner, whatHappened);
+        await this.memoryMaker(CHRONICLE_EVENT.LOCATION_NAME, block, location.id, location.owner, whatHappened);
       }
       catch(error) {
         elizaLogger.error(`Error naming Location ${tokenId} to ${name}`);
@@ -752,7 +752,7 @@ export class TechnomancerClient {
         await this.supabaseProvider.addLocationHistory(lh);
 
         let whatHappened = `This Location - ${location.name} has been described as ${location.description}`;
-        await this.memoryMaker(block, location.id, location.owner, whatHappened);
+        await this.memoryMaker(CHRONICLE_EVENT.LOCATION_DESCRIBE, block, location.id, location.owner, whatHappened);
       }
       catch(error) {
         elizaLogger.error(`Error describing Location ${tokenId}`);
@@ -832,7 +832,7 @@ export class TechnomancerClient {
           }
         }
 
-        await this.memoryMaker(block, techno.locationid, techno.owner, whatHappened, techno.id, name);
+        await this.memoryMaker(CHRONICLE_EVENT.TECHNO_NAME, block, techno.locationid, techno.owner, whatHappened, techno.id, name);
 
       }
       catch(error) {
@@ -893,6 +893,10 @@ export class TechnomancerClient {
         }
 
         await this.supabaseProvider.addTechnomancerHistory(th);
+
+        let whatHappened = `It has happened, a new chapter in my personal lore has been written, and it reads - ${description}`;
+        
+        await this.memoryMaker(CHRONICLE_EVENT.TECHNO_DESCRIBE, block, techno.locationid, techno.owner, whatHappened, techno.id);
 
       }
       catch(error) {
