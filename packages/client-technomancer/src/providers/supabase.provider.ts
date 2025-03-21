@@ -237,7 +237,7 @@ export class SupabaseProvider {
         return techWisdom;
       } 
 
-      return -1;
+      return null;
   }
 
   async findSigilByCode(sigilIndex: string): Promise<TechSigil> {

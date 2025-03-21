@@ -531,15 +531,17 @@ export class TechnomancerClient {
 
         //awesome minted, callback, get some story going
         let whatHappened = `A new Technomancer is born, a ${techType.name}, at the ${techLoc.name} and this one with a ${techSigil.name}.`;
-        if(techWisdom) {
-          whatHappened = `${whatHappened} This OT ${techType.name} is filled with the spirit of ${techWisdom.name}`;
+        if(techWisdom && techWisdom.name) {
+          whatHappened = `${whatHappened} This OT ${techType.name} is filled with the spirit of ${techWisdom.name}.`;
         }
         else{
-          whatHappened = `${whatHappened} This Technomancer is a projection of the OT ${techType.name}`;
+          whatHappened = `${whatHappened} This Technomancer is a projection of the OT ${techType.name}.`;
           if(parent?.name) {
-            whatHappened = `${whatHappened} who is called ${parent.name}`;
+            whatHappened = `${whatHappened} who is called ${parent.name}.`;
           }
         }
+
+        whatHappened = `${whatHappened} What could this mean for The Lamsterverse, for Pader, and the Pax and the Technomancers?`;
 
         await this.memoryMaker(CHRONICLE_EVENT.TECHNO_BIRTH, block, techLoc.id, owner, whatHappened, insertedId);
       }
@@ -676,7 +678,7 @@ export class TechnomancerClient {
 
         await this.supabaseProvider.addLocationHistory(lh);
 
-        let whatHappened = `This Location has been renamed ${location.name}`;
+        let whatHappened = `This Location has been renamed ${location.name}, why and what does this mean to the continungin story of The Verse?`;
         await this.memoryMaker(CHRONICLE_EVENT.LOCATION_NAME, block, location.id, location.owner, whatHappened);
       }
       catch(error) {
@@ -751,7 +753,7 @@ export class TechnomancerClient {
         //update history
         await this.supabaseProvider.addLocationHistory(lh);
 
-        let whatHappened = `This Location - ${location.name} has been described as ${location.description}`;
+        let whatHappened = `This Location - ${location.name} has been described as ${location.description}. I am intrigued, what could this mean?`;
         await this.memoryMaker(CHRONICLE_EVENT.LOCATION_DESCRIBE, block, location.id, location.owner, whatHappened);
       }
       catch(error) {
@@ -832,6 +834,8 @@ export class TechnomancerClient {
           }
         }
 
+        whatHappened = `${whatHappened} A new story unfolds in this naming, what could it mean?`;
+
         await this.memoryMaker(CHRONICLE_EVENT.TECHNO_NAME, block, techno.locationid, techno.owner, whatHappened, techno.id, name);
 
       }
@@ -894,7 +898,7 @@ export class TechnomancerClient {
 
         await this.supabaseProvider.addTechnomancerHistory(th);
 
-        let whatHappened = `It has happened, a new chapter in my personal lore has been written, and it reads - ${description}`;
+        let whatHappened = `It has happened, a new chapter in my personal lore has been written, and it reads - ${description}. How will this impact The Laminate?`;
         
         await this.memoryMaker(CHRONICLE_EVENT.TECHNO_DESCRIBE, block, techno.locationid, techno.owner, whatHappened, techno.id);
 
