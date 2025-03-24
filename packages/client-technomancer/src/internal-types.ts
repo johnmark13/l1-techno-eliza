@@ -133,6 +133,20 @@ export class TechTechnomancerHistory {
   public created_at?: string;
 }
 
+export class HydratedTechTechnomancerHistory {
+  public id: number;
+  public technomancerid: number;
+  public name: string;
+  public description: string;
+  public location: string;
+  public sigil: string;
+  public wisdom: string;
+  public owner: number;
+  public block: number;
+  public blocktimestamp: Date;
+  public created_at?: string;
+}
+
 export class TechLocationHistory {
   public id: number;
   public name: string;
@@ -149,4 +163,13 @@ export class TechLocationPresent {
   public ids: number[];
   public block: number;
   public blocktimestamp: Date;
+}
+
+export class TechTechnomancerShort {
+  public technomancerId: number;
+  public name: string;
+  public location: string;
+  public type: string;
+  public sigil: string;
+  public wisdom: string;
 }

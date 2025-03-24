@@ -58,6 +58,8 @@ export class TechnomancerAgentClient implements Client {
             "chain"
         );
 
+        //TODO: rename user here if required
+
         const content: Content = {
             text: whatHappened,
             source: "chain",
@@ -86,12 +88,20 @@ export class TechnomancerAgentClient implements Client {
         await this.agents.get(this.agent).messageManager.addEmbeddingToMemory(techOrLocMem);
         await this.agents.get(this.agent).messageManager.createMemory(techOrLocMem);
 
+        const technoHistory = technomancerId ? await this.client.buildHistory(technomancerId) : '';
+        const locationHistory = await this.client.buildLocationHistory(locationId);
+        const presence = await this.client.getLocationPresence(locationId, technomancerId);
+
         let state = await this.agents.get(this.agent).composeState(userMessage, {
             agentName: this.agents.get(this.agent).character.name,
             block: block,
             technomancerId: technomancerId,
             locationId: locationId,
-            event: event
+            event: event,
+            techName: name,
+            technoHistory,
+            locationHistory,
+            presence
         });
 
         let message = null as Content | null;

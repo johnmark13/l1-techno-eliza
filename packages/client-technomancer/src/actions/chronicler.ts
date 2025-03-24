@@ -1,5 +1,6 @@
 import {ActionExample, composeContext, Content, generateMessageResponse, getEmbeddingZeroVector, Handler, HandlerCallback, IAgentRuntime, Memory, messageCompletionFooter, ModelClass, State, stringToUuid, Validator, type Action} from "@elizaos/core"
 import { CHRONICLE_EVENT } from "../technomancer-agent-client";
+import { memoryUsage } from "process";
 
 export const techStoryWriteTemplate =
     `# Action Examples
@@ -52,9 +53,14 @@ Examples of {{agentName}}'s dialog and actions:
 # Knowledge
 {{knowledge}}
 
+# Location History
+{{locationHistory}}
+
 # Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. In this
 fragment a new Technomancer has come into existence in a certain location, with a certain type and a sigl representing their calling. They may also have wisdom. Explore the wisdom
-and sigil, and reference either the emptiness of the location, or the other Technomancers that are already present.
+and sigil, and reference either the emptiness of the location, or the other Technomancers that are already present. Do not invent a name for the new Technomancer. Reference the Location History
+to understand more that has gone on their over time.
+
 Focus on:
 - Fun
 - Narrative continuity
@@ -88,9 +94,19 @@ Examples of {{agentName}}'s dialog and actions:
 # Knowledge
 {{knowledge}}
 
+# Tehnomancer History
+{{technoHistory}}
+
+# Location History
+{{locationHistory}}
+
+# Location Presence
+{{presence}}
+
 # Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. In this
-fragment a Technomancer has been named, reference the name and what it could mean, what has come before, whate references of this name in history, especially mythological or mycelial.
-Think about the future of this Technomancer and what this might mean - if they were named before, what does the change represent, are the winds changing?
+fragment a Technomancer has been named - {{techName}}, reference that name and what it could mean, reference what has come from Technomancer History, what could this name mean, especially mythological or mycelial.
+Think about the future of this Technomancer and what this might mean - and what the other Technomancers at the Location Presence might make of the change.
+
 Focus on:
 - Fun
 - Narrative continuity
@@ -124,8 +140,18 @@ Examples of {{agentName}}'s dialog and actions:
 # Knowledge
 {{knowledge}}
 
-# Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. New information has come to 
-light about this Technomancer, explore what it means to their current Location and those there with them.
+# Tehnomancer History
+{{technoHistory}}
+
+# Location History
+{{locationHistory}}
+
+# Location Presence
+{{presence}}
+
+# Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. New information has come to light about this Technomancer reference Technomancer History, what could this name mean, especially mythological or mycelial.
+Think about the future of this Technomancer and what this might mean - and what the other Technomancers at the Location Presence might make of the change.
+
 Focus on:
 - Fun
 - Narrative continuity
@@ -159,9 +185,15 @@ Examples of {{agentName}}'s dialog and actions:
 # Knowledge
 {{knowledge}}
 
+# Location History
+{{locationHistory}}
+
+# Location Presence
+{{presence}}
+
 # Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. A Location
 has been updated with new information, this has an impact on all those there and who may journey there in the future, it may add meaning to those who have been there before, what does it 
-mean, what could it mean?
+mean, what could it mean? Referece Location History for a chronological history of changes, and think of the imapct of those Technomancers listed in Location Presence.
 Focus on:
 - Fun
 - Narrative continuity
@@ -195,9 +227,17 @@ Examples of {{agentName}}'s dialog and actions:
 # Knowledge
 {{knowledge}}
 
+# Location History
+{{locationHistory}}
+
+# Location Presence
+{{presence}}
+
+
 # Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. A Location
 has been renamed, this happens very infrequently and can have profound impact on everyone who travels through the laminate, what provenance is there for the new name, and what
-impact could it have on the stories of those who visit?
+impact could it have on the stories of those who visit?  Referece Location History for a chronological history of changes, and think of the imapct of those Technomancers listed in Location Presence.
+
 Focus on:
 - Fun
 - Narrative continuity
@@ -254,10 +294,23 @@ export const Chronicler: Action = {
         callback: HandlerCallback
     ) => {    
         let template = techStoryWriteTemplate;
+        let recentMessages = await runtime.messageManager.getMemories({
+            roomId: message.roomId,
+            count: 20
+        });
+
+        // const actors = await getActorDetails({
+        //     runtime: runtime as IAgentRuntime,
+        //     roomId,
+        // });
+
+        // const actorMap = new Map(actors.map((actor) => [actor.id, actor]));
+
         if(state.event) {
             switch(state.event as CHRONICLE_EVENT) {
                 case CHRONICLE_EVENT.TECHNO_BIRTH: {
                     template = techBornTemplate;
+                    //const who = await runtime.databaseAdapter.getParticipantsForRoom(message.roomId);
                     break;
                 }
                 case CHRONICLE_EVENT.TECHNO_NAME: {
@@ -282,6 +335,12 @@ export const Chronicler: Action = {
             }
         }
 
+        const formattedMemories = recentMessages
+            .filter((memory) => memory.userId === memory.agentId)
+            .map((memory) => memory.content.text).join('\n');
+
+        state.recentMessages = formattedMemories;
+        
         const context = composeContext({
             state,
             template: template,

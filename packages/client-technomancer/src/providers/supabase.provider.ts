@@ -3,10 +3,11 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import {
     elizaLogger,
 } from "@elizaos/core";
-import { DataIndex, TechCombinationDescription, TechCombinationName, TechLocation, TechLocationDescription, TechLocationHistory, TechLocationTransfer, TechSigil, TechTechnomancer, TechTechnomancerHistory, TechTechnomancerTransfer, TechType, TechWisdom, WalletUser } from "../internal-types";
-import { ethers } from "ethers";
+import { DataIndex, HydratedTechTechnomancerHistory, TechCombinationDescription, TechCombinationName, TechLocation, TechLocationDescription, TechLocationHistory, TechLocationTransfer, TechSigil, TechTechnomancer, TechTechnomancerHistory, TechTechnomancerShort, TechTechnomancerTransfer, TechType, TechWisdom, WalletUser } from "../internal-types";
+import { ethers, id } from "ethers";
 
 export class SupabaseProvider {
+  
   private sb: SupabaseClient | undefined;
 
   constructor(supabaseUrl:string, supabaseKey: string) {
@@ -268,12 +269,40 @@ export class SupabaseProvider {
       return null;
   }
 
+  async fetchTechnomancerById(id: number): Promise<TechTechnomancer> {
+    if (!this.sb) {
+      throw new Error(`Supbase not configured`);
+    }
+
+    elizaLogger.info(`Fetching technomancer by ID  ${id}`);
+
+    const { data, error } = await this.sb
+      .from("techTechnomancer")
+      .select("*")
+      .eq("id", id);
+
+    if(error) {
+      elizaLogger.error(`Error fetching Technomancer by ID ${id} - ${error.message}`);
+      throw error;
+    }
+
+    let techno: TechTechnomancer;
+
+    if (data.length) {
+      techno = data[0] as TechTechnomancer;
+      elizaLogger.info(`Got Technomancer ${techno.id} for ID ${id}`);
+      return techno
+    } 
+
+    throw new Error(`No Technomancer found with ID ${id}`);
+  }
+
   async fetchTechnomancer(tokenId: bigint): Promise<TechTechnomancer> {
     if (!this.sb) {
       throw new Error(`Supbase not configured`);
     }
 
-    elizaLogger.info(`Fetching technomancer by ID  ${tokenId}`);
+    elizaLogger.info(`Fetching technomancer by token ID  ${tokenId}`);
 
     const { data, error } = await this.sb
       .from("techTechnomancer")
@@ -281,7 +310,7 @@ export class SupabaseProvider {
       .eq("tokenid", Number(tokenId));
 
     if(error) {
-      elizaLogger.error(`Error fetching Technomancer by ID ${tokenId} - ${error.message}`);
+      elizaLogger.error(`Error fetching Technomancer by token ID ${tokenId} - ${error.message}`);
       throw error;
     }
 
@@ -294,6 +323,117 @@ export class SupabaseProvider {
     } 
 
     throw new Error(`No Technomancer found with tokenID ${tokenId}`);
+  }
+
+  async fetchTechnoHistory(technomancerId: number): Promise<HydratedTechTechnomancerHistory[]> {
+    if (!this.sb) {
+      throw new Error(`Supbase not configured`);
+    }
+
+    elizaLogger.info(`Fetching History for technomancer with ID ${technomancerId}`);
+
+    const { data, error } = await this.sb
+      .from("techTechnomancerHistory")
+      .select(`
+        id, technomancerid, name, description, owner, block, blocktimestamp, created_at,
+        techSigil(name),
+        techWisdom(name),
+        techLocation(name)
+      `)
+      .eq("technomancerid", technomancerId)
+      .order('created_at',{ ascending: true });
+
+    if (error) {
+      elizaLogger.error(`Error fetching History for technomancer with ID ${technomancerId} - ${error.message}`);
+      throw error;
+    }
+
+    const resp = data && data.map((d) => {
+      const his = {
+        id:d.id,
+        technomancerid: technomancerId,
+        block: d.block,
+        blocktimestamp: d.blocktimestamp,
+        description: d.description,
+        name: d.name,
+        location: d.techLocation['name'],
+        owner: d.owner,
+        created_at: d.created_at,
+        sigil: d.techSigil['name'],
+        wisdom: d.techWisdom ? d.techWisdom['name'] : ''
+      } as HydratedTechTechnomancerHistory;
+
+      return his;
+    }) || [];
+
+    return resp;
+  }
+
+  async fetchLocationHistory(locationId: number): Promise<TechLocationHistory[]> {
+    if (!this.sb) {
+      throw new Error(`Supbase not configured`);
+    }
+
+    elizaLogger.info(`Fetching History for location with ID ${locationId}`);
+
+    const { data, error } = await this.sb
+      .from("techLocationHistory")
+      .select('*')
+      .eq("locationid", locationId)
+      .order('created_at',{ ascending: true });
+
+      if (error) {
+        elizaLogger.error(`Error fetching History for location with ID ${locationId} - ${error.message}`);
+        throw error;
+      }
+
+      const resp = data && data.map((d) => d as TechLocationHistory) || [];
+
+    return resp;
+  }
+
+  async fetchLocationPresence(locationId: number): Promise<TechTechnomancerShort[]> {
+    if (!this.sb) {
+      throw new Error(`Supbase not configured`);
+    }
+
+    elizaLogger.info(`Fetching History for location with ID ${locationId}`);
+
+    const { data, error } = await this.sb
+      .from("techLocation")
+      .select('*')
+      .eq("id", locationId)
+      .order('created_at',{ ascending: false })
+      .limit(1);
+
+      if (error) {
+        elizaLogger.error(`Error fetching Presence for location with ID ${locationId} - ${error.message}`);
+        throw error;
+      }
+
+      if(data.length === 0) {
+        return [];
+      }
+
+      const record = data[0] as TechLocation;
+
+      const { data: techData, error: techError } = await this.sb
+      .from("techTechnomancer")
+      .select("id, name, techType(name), techWisdom(name), techSigil(name)")
+      .in("id", record.present.ids);
+
+      const resp = techData && techData.map((d) => {
+        return {
+          technomancerId: d.id,
+          location: record.name,
+          name: d.name,
+          type: d.techType['name'],
+          sigil: d.techSigil['name'],
+          wisdom: d.techWisdom ? d.techWisdom['name'] : ''
+        } as TechTechnomancerShort
+      }) || [];
+
+    return resp;
   }
 
   async findLocationIdByCode(locationIndex: string): Promise<TechLocation> {

@@ -22,7 +22,7 @@ import { lamina1V5 } from "./chain/lamina1";
 import { technomancerAbi } from "./chain/Technomancer";
 import { laminateLocationAbi } from "./chain/LaminateLocation";
 import { SupabaseProvider } from "./providers/supabase.provider";
-import { TechCombinationDescription, TechCombinationName, TechLocation, TechLocationDescription, TechLocationHistory, TechLocationPresent, TechLocationTransfer, TechMetadata, TechSigil, TechTechnomancer, TechTechnomancerHistory, TechTechnomancerTransfer, TechType, TechWisdom } from "./internal-types";
+import { HydratedTechTechnomancerHistory, TechCombinationDescription, TechCombinationName, TechLocation, TechLocationDescription, TechLocationHistory, TechLocationPresent, TechLocationTransfer, TechMetadata, TechSigil, TechTechnomancer, TechTechnomancerHistory, TechTechnomancerTransfer, TechType, TechWisdom } from "./internal-types";
 import { CHRONICLE_EVENT, TechnomancerAgentClient } from "./technomancer-agent-client";
 
 //0. Model tokens at location
@@ -418,7 +418,74 @@ export class TechnomancerClient {
       this.unwatchLoc();
       this.unwatchTech();
       elizaLogger.info(`Tech Listener Shut Down`);
-    }    
+    }  
+    
+    async buildHistory(technomancerId: number) : Promise<string[]> {
+      const history: HydratedTechTechnomancerHistory[] = await this.supabaseProvider.fetchTechnoHistory(technomancerId);
+
+      let j = 1;
+
+      const resp: string[] = [`I was created on ${history[0].blocktimestamp} at ${history[0].location} with the Sigil ${history[0].sigil} and with ${history[0].wisdom ? 'The Wisdom of ' + history[0].wisdom : 'no wisdom of my own'}`];
+
+      while(j < history.length) {
+        const changed = 
+          history[j].name !== history[j-1].name 
+            ? `At ${history[j].blocktimestamp} my name was changed from ${history[j-1].name ? history[j-1].name : 'Unnamed'} to ${history[j].name}`
+          : history[j].description !== history[j-1].description
+            ? `At ${history[j].blocktimestamp} my description was changed from ${history[j-1].description ? history[j-1].description : 'undescribed'} to ${history[j].description}`
+          : history[j].location !== history[j-1].location
+            ? `At ${history[j].blocktimestamp} I moved from ${history[j-1].location} to ${history[j].location}`
+          : `At ${history[j].blocktimestamp} Something happened to me, but I cannot recall what`;
+
+          resp.push(changed);
+
+        ++j;
+      }
+
+      return resp;
+    }
+
+    async buildLocationHistory(locationId: number) : Promise<string[]>{
+      const history: TechLocationHistory[] = await this.supabaseProvider.fetchLocationHistory(locationId);
+
+      let j = 1;
+
+      const resp: string[] = [`I was created on ${history[0].blocktimestamp} as ${history[0].name}`];
+
+      while(j < history.length) {
+        const changed = 
+          history[j].name !== history[j-1].name 
+            ? `At ${history[j].blocktimestamp} my name was changed from ${history[j-1].name ? history[j-1].name : 'Unnamed'} to ${history[j].name}`
+          : history[j].description !== history[j-1].description
+            ? `At ${history[j].blocktimestamp} my description was changed from ${history[j-1].description ? history[j-1].description : 'undescribed'} to ${history[j].description}`
+          : await this.buildPresentChangeString(history[j-1].present, history[j].present);
+            
+
+        resp.push(changed);
+
+        ++j;
+      }
+
+      return resp;
+    }
+
+    async getLocationPresence(locationId: number, technomancerId?: number) : Promise<string> {
+      const presence = await this.supabaseProvider.fetchLocationPresence(locationId);
+
+      const notMe = presence.filter((p) => p.technomancerId !== technomancerId);
+
+      if (notMe.length === 0) {
+        return technomancerId
+          ? 'There is no one here but me, am I here?'
+          : 'There is no one here';
+      }
+
+      const resp = notMe.map((p) => `A ${p.type} with a ${p.sigil} and ${p.wisdom ? p.wisdom + ' wisdom' : 'no specific wisdom'}`).join(' and ');
+
+      return technomancerId 
+        ? `Presnt at the location we have ${resp}`
+        : `Presnt at the location other than the target Technomancer we have ${resp}`;
+    }
 
     private async getUserIdForAddress(
       from: string,
@@ -686,7 +753,7 @@ export class TechnomancerClient {
       }
     }
 
-    async describeLocation(tokenId: bigint, block: number, ts: Date) {
+    private async describeLocation(tokenId: bigint, block: number, ts: Date) {
       try {
         //function descriptions(uint256 tokenId) public view returns (string[] memory) {}
         const descriptions = await readContract({contract: this.locationContract, method: "descriptions", params:[tokenId]});
@@ -761,7 +828,7 @@ export class TechnomancerClient {
       }
     }
 
-    async handleCombinationNamed(tokenId: bigint, combination: `0x${string}`, name: string, block: number, ts: Date) {
+    private async handleCombinationNamed(tokenId: bigint, combination: `0x${string}`, name: string, block: number, ts: Date) {
       try {
         //if name already exists deactivate
         const techno = await this.supabaseProvider.fetchTechnomancer(tokenId);
@@ -844,7 +911,7 @@ export class TechnomancerClient {
       }      
     }
 
-    async handleCombinationDescribed(tokenId: bigint, combination: `0x${string}`, block: number, ts: Date) {
+    private async handleCombinationDescribed(tokenId: bigint, combination: `0x${string}`, block: number, ts: Date) {
       try {
         //if name already exists deactivate
         const techno = await this.supabaseProvider.fetchTechnomancer(tokenId);
@@ -930,4 +997,29 @@ export class TechnomancerClient {
 
       return tsstr;
     }
+
+    private async buildPresentChangeString(past: TechLocationPresent, present: TechLocationPresent) : Promise<string> {
+      if(present.ids.length > past.ids.length) {
+        //someone joined
+        const arrived = present.ids.filter((id) => !past.ids.includes(id));
+        
+        return (await Promise.all(arrived.map(async (id) => {
+          const techno = await this.supabaseProvider.fetchTechnomancerById(id);
+          return `We were joined by a new friend ${techno.name ? 'who now goes by the name ' + techno.name : 'who is as yet unnamed'}`;
+        }))).join("\n");        
+      }
+      else if(present.ids.length < past.ids.length) {
+        const left = past.ids.filter((id) => !present.ids.includes(id));
+
+        return (await Promise.all(left.map(async (id) => {
+          const techno = await this.supabaseProvider.fetchTechnomancerById(id);
+          return `${techno.name ? 'The technomancer ' + techno.name : ' unnamed Technomancer '} left us to contrinue their adventure elsewhere`;
+        }))).join("\n");    
+      }
+      else {
+        //in theory someone joined and left, but in practive, that is impossible
+        return `Something happened, some shimmer in the Lichen, but my memory is vague`;
+      }
+    }
 }
+
