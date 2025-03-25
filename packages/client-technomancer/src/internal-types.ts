@@ -1,3 +1,11 @@
+export class TechChronicleMeta {
+  type?: string;
+  location?: string;
+  name?: string;
+  sigil?: string;
+  wisdom?: string;
+}
+
 export class TechMetadata {
   image: string;
   name: string;

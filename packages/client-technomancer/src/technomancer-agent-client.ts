@@ -2,6 +2,7 @@ import { Client, Content, IAgentRuntime, Memory, UUID, elizaLogger, getEmbedding
 import { TechnomancerClient } from "./technomancer-client";
 import { SupabaseProvider } from "./providers/supabase.provider";
 import { validateTechnomancerConfig } from "./environment";
+import { TechChronicleMeta } from "./internal-types";
 
 export enum CHRONICLE_EVENT {
     NONE,
@@ -46,7 +47,7 @@ export class TechnomancerAgentClient implements Client {
         };
     }
 
-     createMemory = async (event: CHRONICLE_EVENT, block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, name?:string): Promise<string> => {
+     createMemory = async (event: CHRONICLE_EVENT, block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, meta?:TechChronicleMeta): Promise<string> => {
         const userId = technomancerId ? stringToUuid(technomancerId) : this.agent;
         const roomId = stringToUuid(locationId);
 
@@ -54,7 +55,7 @@ export class TechnomancerAgentClient implements Client {
             userId,
             roomId,
             undefined,
-            name,
+            meta?.name,
             "chain"
         );
 
@@ -98,7 +99,12 @@ export class TechnomancerAgentClient implements Client {
             technomancerId: technomancerId,
             locationId: locationId,
             event: event,
-            techName: name,
+            whatHappened,
+            techType: meta?.type,
+            techName: meta?.name,
+            techSigil: meta?.sigil,
+            techWisdom: meta?.wisdom,
+            techLocation: meta?.location,
             technoHistory,
             locationHistory,
             presence

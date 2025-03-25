@@ -411,7 +411,7 @@ export class SupabaseProvider {
         throw error;
       }
 
-      if(data.length === 0) {
+      if(data.length === 0 || !data[0].present) {
         return [];
       }
 

@@ -19,7 +19,10 @@ Examples of {{agentName}}'s dialog and actions:
 # Recent Chat History:
 {{recentMessages}}
 
-# Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. 
+# Trigger Message
+{{whatHappened}}
+
+# Instructions: Write a natural, playful, slightly naughty paragraph for {{agentName}} continuing a story based on the Technomancers and their movements through the The Laminate in response to the Trigger Message. 
 Focus on:
 - Fun
 - Narrative continuity
@@ -28,9 +31,7 @@ Focus on:
 - Mythology
 - Use names of Locations and Technomancers where known
 - Grab the most recent 5 messages for some context. Validate the context randomly and use that as a reference point for your next message, but not always, only when relevant.
-- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive.
-
-# Instructions: Write the next message for {{agentName}}. Include the "NONE" action only, as the only valid action for story telling is "NONE".
+- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message differently each time, and be organic, non reptitive. Include the "NONE" action only, as the only valid action for story telling is "NONE".
 ` + messageCompletionFooter;
 
 export const techBornTemplate =
@@ -50,14 +51,17 @@ Examples of {{agentName}}'s dialog and actions:
 # Recent Chat History:
 {{recentMessages}}
 
+# Trigger Message
+{{whatHappened}}
+
 # Knowledge
 {{knowledge}}
 
 # Location History
 {{locationHistory}}
 
-# Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. In this
-fragment a new Technomancer has come into existence in a certain location, with a certain type and a sigl representing their calling. They may also have wisdom. Explore the wisdom
+# Instructions: Write a natural, playful, slightly naughty paragraph for {{agentName}} continuing a a story based on the Technomancers and their movements through the The Laminate in response to the Trigger Message. In this
+fragment a new Technomancer has come into existence at {{techLocation}}, with a the type {{techType}} and a sigil {{techSigil}} representing their calling. They may also have specific wisdom - {{techWisdom}}. Explore the wisdom
 and sigil, and reference either the emptiness of the location, or the other Technomancers that are already present. Do not invent a name for the new Technomancer. Reference the Location History
 to understand more that has gone on their over time.
 
@@ -69,9 +73,7 @@ Focus on:
 - Mythology
 - Use names of Locations and Technomancers where known
 - Grab the most recent 5 messages for some context. Validate the context randomly and use that as a reference point for your next message, but not always, only when relevant.
-- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive.
-
-# Instructions: Write the next message for {{agentName}}. Include the "NONE" action only, as the only valid action for story telling is "NONE".
+- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive. Include the "NONE" action only, as the only valid action for story telling is "NONE".
 ` + messageCompletionFooter;
 
 export const techNamedTemplate =
@@ -91,6 +93,9 @@ Examples of {{agentName}}'s dialog and actions:
 # Recent Chat History:
 {{recentMessages}}
 
+# Trigger Message
+{{whatHappened}}
+
 # Knowledge
 {{knowledge}}
 
@@ -103,7 +108,7 @@ Examples of {{agentName}}'s dialog and actions:
 # Location Presence
 {{presence}}
 
-# Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. In this
+# Instructions: Write a natural, playful, slightly naughty paragraph for {{agentName}} continuing a a story based on the Technomancers and their movements through the The Laminate in response to the Trigger Message. In this
 fragment a Technomancer has been named - {{techName}}, reference that name and what it could mean, reference what has come from Technomancer History, what could this name mean, especially mythological or mycelial.
 Think about the future of this Technomancer and what this might mean - and what the other Technomancers at the Location Presence might make of the change.
 
@@ -115,9 +120,7 @@ Focus on:
 - Mythology
 - Use names of Locations and Technomancers where known
 - Grab the most recent 5 messages for some context. Validate the context randomly and use that as a reference point for your next message, but not always, only when relevant.
-- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive.
-
-# Instructions: Write the next message for {{agentName}}. Include the "NONE" action only, as the only valid action for story telling is "NONE".
+- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive. Include the "NONE" action only, as the only valid action for story telling is "NONE".
 ` + messageCompletionFooter;
 
 export const techDescTemplate =
@@ -137,6 +140,9 @@ Examples of {{agentName}}'s dialog and actions:
 # Recent Chat History:
 {{recentMessages}}
 
+# Trigger Message
+{{whatHappened}}
+
 # Knowledge
 {{knowledge}}
 
@@ -149,7 +155,7 @@ Examples of {{agentName}}'s dialog and actions:
 # Location Presence
 {{presence}}
 
-# Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. New information has come to light about this Technomancer reference Technomancer History, what could this name mean, especially mythological or mycelial.
+# Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate in response to the Trigger Message. New information has come to light about this Technomancer reference Technomancer History, what could this name mean, especially mythological or mycelial.
 Think about the future of this Technomancer and what this might mean - and what the other Technomancers at the Location Presence might make of the change.
 
 Focus on:
@@ -160,9 +166,7 @@ Focus on:
 - Mythology
 - Use names of Locations and Technomancers where known
 - Grab the most recent 5 messages for some context. Validate the context randomly and use that as a reference point for your next message, but not always, only when relevant.
-- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive.
-
-# Instructions: Write the next message for {{agentName}}. Include the "NONE" action only, as the only valid action for story telling is "NONE".
+- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive. Include the "NONE" action only, as the only valid action for story telling is "NONE".
 ` + messageCompletionFooter;
 
 export const locDescTemplate =
@@ -182,6 +186,9 @@ Examples of {{agentName}}'s dialog and actions:
 # Recent Chat History:
 {{recentMessages}}
 
+# Trigger Message
+{{whatHappened}}
+
 # Knowledge
 {{knowledge}}
 
@@ -191,7 +198,7 @@ Examples of {{agentName}}'s dialog and actions:
 # Location Presence
 {{presence}}
 
-# Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. A Location
+# Instructions: Write a natural, playful, slightly naughty paragraph for {{agentName}} continuing a a story based on the Technomancers and their movements through the The Laminate in response to the Trigger Message. A Location
 has been updated with new information, this has an impact on all those there and who may journey there in the future, it may add meaning to those who have been there before, what does it 
 mean, what could it mean? Referece Location History for a chronological history of changes, and think of the imapct of those Technomancers listed in Location Presence.
 Focus on:
@@ -202,9 +209,7 @@ Focus on:
 - Mythology
 - Use names of Locations and Technomancers where known
 - Grab the most recent 5 messages for some context. Validate the context randomly and use that as a reference point for your next message, but not always, only when relevant.
-- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive.
-
-# Instructions: Write the next message for {{agentName}}. Include the "NONE" action only, as the only valid action for story telling is "NONE".
+- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive. Include the "NONE" action only, as the only valid action for story telling is "NONE".
 ` + messageCompletionFooter;
 
 export const locNamedTemplate =
@@ -224,6 +229,9 @@ Examples of {{agentName}}'s dialog and actions:
 # Recent Chat History:
 {{recentMessages}}
 
+# Trigger Message
+{{whatHappened}}
+
 # Knowledge
 {{knowledge}}
 
@@ -233,9 +241,8 @@ Examples of {{agentName}}'s dialog and actions:
 # Location Presence
 {{presence}}
 
-
-# Instructions: Write a natural, playful, slightly naughty paragraph for continuing a a story based on the Technomancers and their movements through the The Laminate. A Location
-has been renamed, this happens very infrequently and can have profound impact on everyone who travels through the laminate, what provenance is there for the new name, and what
+# Instructions: Write a natural, playful, slightly naughty paragraph for {{agentName}} continuing a a story based on the Technomancers and their movements through the The Laminate in response to the Trigger Message. A Location
+has been renamed to {{techLocation}}, this happens very infrequently and can have profound impact on everyone who travels through the laminate, what provenance is there for the new name, and what
 impact could it have on the stories of those who visit?  Referece Location History for a chronological history of changes, and think of the imapct of those Technomancers listed in Location Presence.
 
 Focus on:
@@ -246,9 +253,7 @@ Focus on:
 - Mythology
 - Use names of Locations and Technomancers where known
 - Grab the most recent 5 messages for some context. Validate the context randomly and use that as a reference point for your next message, but not always, only when relevant.
-- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive.
-
-# Instructions: Write the next message for {{agentName}}. Include the "NONE" action only, as the only valid action for story telling is "NONE".
+- DO NOT REPEAT THE SAME thing that you just said from your recent chat history, start the message different each time, and be organic, non reptitive. Include the "NONE" action only, as the only valid action for story telling is "NONE".
 ` + messageCompletionFooter;
 
 export const Chronicler: Action = {

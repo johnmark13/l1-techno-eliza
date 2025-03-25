@@ -22,7 +22,7 @@ import { lamina1V5 } from "./chain/lamina1";
 import { technomancerAbi } from "./chain/Technomancer";
 import { laminateLocationAbi } from "./chain/LaminateLocation";
 import { SupabaseProvider } from "./providers/supabase.provider";
-import { HydratedTechTechnomancerHistory, TechCombinationDescription, TechCombinationName, TechLocation, TechLocationDescription, TechLocationHistory, TechLocationPresent, TechLocationTransfer, TechMetadata, TechSigil, TechTechnomancer, TechTechnomancerHistory, TechTechnomancerTransfer, TechType, TechWisdom } from "./internal-types";
+import { HydratedTechTechnomancerHistory, TechChronicleMeta, TechCombinationDescription, TechCombinationName, TechLocation, TechLocationDescription, TechLocationHistory, TechLocationPresent, TechLocationTransfer, TechMetadata, TechSigil, TechTechnomancer, TechTechnomancerHistory, TechTechnomancerTransfer, TechType, TechWisdom } from "./internal-types";
 import { CHRONICLE_EVENT, TechnomancerAgentClient } from "./technomancer-agent-client";
 
 //0. Model tokens at location
@@ -52,14 +52,14 @@ export class TechnomancerClient {
     private unwatchTech: () => void;
     private unwatchLoc: () => void;
 
-    private memoryMaker: (event: CHRONICLE_EVENT, block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, name?: string) => Promise<string>;
+    private memoryMaker: (event: CHRONICLE_EVENT, block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, meta?: TechChronicleMeta) => Promise<string>;
 
     constructor(
       supabaseProvider: SupabaseProvider,
       secret: string,
       technoAddress: string,
       locationAddress: string,
-      memoryMaker: (event: CHRONICLE_EVENT, block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, name?: string) => Promise<string>
+      memoryMaker: (event: CHRONICLE_EVENT, block: number, locationId: number, ownerId: number, whatHappened: string, technomancerId?: number, meta?: TechChronicleMeta) => Promise<string>
     ) {
         this.memoryMaker = memoryMaker;
         this.supabaseProvider = supabaseProvider;
@@ -597,20 +597,25 @@ export class TechnomancerClient {
         }
 
         //awesome minted, callback, get some story going
-        let whatHappened = `A new Technomancer is born, a ${techType.name}, at the ${techLoc.name} and this one with a ${techSigil.name}.`;
+        let whatHappened = `Hello, I am new here, I'm a ${techType.name}, I'm at the ${techLoc.name} and my sigil is the ${techSigil.name}.`;
         if(techWisdom && techWisdom.name) {
-          whatHappened = `${whatHappened} This OT ${techType.name} is filled with the spirit of ${techWisdom.name}.`;
+          whatHappened = `${whatHappened} I'm an OT ${techType.name} filled with the spirit of ${techWisdom.name}.`;
         }
         else{
-          whatHappened = `${whatHappened} This Technomancer is a projection of the OT ${techType.name}.`;
+          whatHappened = `${whatHappened} I'm a Technomancer, a projection of the OT ${techType.name}.`;
           if(parent?.name) {
             whatHappened = `${whatHappened} who is called ${parent.name}.`;
           }
         }
 
-        whatHappened = `${whatHappened} What could this mean for The Lamsterverse, for Pader, and the Pax and the Technomancers?`;
+        const meta = {
+          location: techLoc.name,
+          sigil: techSigil.name,
+          type: techType.name,
+          wisdom: techWisdom?.name,
+        } as TechChronicleMeta;
 
-        await this.memoryMaker(CHRONICLE_EVENT.TECHNO_BIRTH, block, techLoc.id, owner, whatHappened, insertedId);
+        await this.memoryMaker(CHRONICLE_EVENT.TECHNO_BIRTH, block, techLoc.id, owner, whatHappened, insertedId, meta);
       }
       catch (error) {
         elizaLogger.error(`Now we're out of sorts, from block ${block} because ${error}`);
@@ -745,8 +750,11 @@ export class TechnomancerClient {
 
         await this.supabaseProvider.addLocationHistory(lh);
 
-        let whatHappened = `This Location has been renamed ${location.name}, why and what does this mean to the continungin story of The Verse?`;
-        await this.memoryMaker(CHRONICLE_EVENT.LOCATION_NAME, block, location.id, location.owner, whatHappened);
+        let whatHappened = `This Location has been renamed ${location.name}`;
+
+        const meta = {location: location.name} as TechChronicleMeta;
+
+        await this.memoryMaker(CHRONICLE_EVENT.LOCATION_NAME, block, location.id, location.owner, whatHappened, undefined, meta);
       }
       catch(error) {
         elizaLogger.error(`Error naming Location ${tokenId} to ${name}`);
@@ -820,8 +828,10 @@ export class TechnomancerClient {
         //update history
         await this.supabaseProvider.addLocationHistory(lh);
 
-        let whatHappened = `This Location - ${location.name} has been described as ${location.description}. I am intrigued, what could this mean?`;
-        await this.memoryMaker(CHRONICLE_EVENT.LOCATION_DESCRIBE, block, location.id, location.owner, whatHappened);
+        let whatHappened = `This Location - ${location.name} has been described as ${location.description}.`;
+        const meta = {location: location.name} as TechChronicleMeta;
+
+        await this.memoryMaker(CHRONICLE_EVENT.LOCATION_DESCRIBE, block, location.id, location.owner, whatHappened, undefined, meta);
       }
       catch(error) {
         elizaLogger.error(`Error describing Location ${tokenId}`);
@@ -901,9 +911,11 @@ export class TechnomancerClient {
           }
         }
 
-        whatHappened = `${whatHappened} A new story unfolds in this naming, what could it mean?`;
+        const meta = {
+          name: name,
+        } as TechChronicleMeta;
 
-        await this.memoryMaker(CHRONICLE_EVENT.TECHNO_NAME, block, techno.locationid, techno.owner, whatHappened, techno.id, name);
+        await this.memoryMaker(CHRONICLE_EVENT.TECHNO_NAME, block, techno.locationid, techno.owner, whatHappened, techno.id, meta);
 
       }
       catch(error) {
@@ -965,7 +977,7 @@ export class TechnomancerClient {
 
         await this.supabaseProvider.addTechnomancerHistory(th);
 
-        let whatHappened = `It has happened, a new chapter in my personal lore has been written, and it reads - ${description}. How will this impact The Laminate?`;
+        let whatHappened = `It has happened, a new chapter in my personal lore has been written, and it reads - ${description}.`;
         
         await this.memoryMaker(CHRONICLE_EVENT.TECHNO_DESCRIBE, block, techno.locationid, techno.owner, whatHappened, techno.id);
 
