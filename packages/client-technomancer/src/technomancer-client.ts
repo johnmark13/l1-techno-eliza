@@ -917,7 +917,7 @@ export class TechnomancerClient {
           whatHappened = `${whatHappened} whoever they were before, they are now '${name}'.`
         }
 
-        if(techno.wisdomid > -1) {
+        if(!!techno.wisdomid) {
           whatHappened = `${whatHappened} This name shall be shared amongst all their Projections.`;
         }
         else {
