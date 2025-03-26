@@ -922,7 +922,7 @@ export class TechnomancerClient {
         }
         else {
           if(parent?.name) {
-            whatHappened = `${whatHappened} Their OT is named ${parent.name} and so they are now '${parent.name}-${name}'.`
+            whatHappened = `${whatHappened} Their OT is named ${parent.name} and so they are now '${name}' of the '${parent.name}' line.`
           }
         }
 
@@ -963,7 +963,12 @@ export class TechnomancerClient {
         whatHappened = `${whatHappened} they were '${projection.name}', they are now '${newProjectionName}'.`;
       }
       else {
-        whatHappened = `${whatHappened} whoever they were before, they are now '${newProjectionName}'.`;
+        if(existing) {
+          whatHappened = `${whatHappened} Their OT is named ${parent.name} and so they are now '${existing.name}' of the '${newOtName}' line.`
+        }
+        else {
+          whatHappened = `${whatHappened} whoever they were before, they are now '${newProjectionName}'.`;
+        }
       }
 
       const meta = {
