@@ -1,3 +1,5 @@
+import { UUID } from "@elizaos/core";
+
 export class TechChronicleMeta {
   type?: string;
   location?: string;
@@ -105,6 +107,7 @@ export class TechTechnomancer {
   public mintedby: number;
   public owner: number;
   public created_at?: string;
+  public elizauuid?: UUID;
 }
 
 export class TechTechnomancerTransfer {

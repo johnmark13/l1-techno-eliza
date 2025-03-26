@@ -1,5 +1,6 @@
   import {
     elizaLogger,
+    stringToUuid,
 } from "@elizaos/core";
 
 import {
@@ -523,7 +524,7 @@ export class TechnomancerClient {
           sigilid: techSigil.id,
           mintedby: owner,
           owner: owner,
-          image: decoded.image
+          image: decoded.image,
         } as TechTechnomancer;
 
         if(tokenId > 15/** Lazy, OT limit */) {
@@ -542,6 +543,7 @@ export class TechnomancerClient {
         }
 
         const insertedId = await this.supabaseProvider.insertTechnomancer(tech);
+        await this.supabaseProvider.updateTechnoUuid(insertedId, stringToUuid(insertedId));
         elizaLogger.info(`Inserted new Technomancer token with the ID ${insertedId}`);
 
         //2. Create the technomancer history record
@@ -903,9 +905,9 @@ export class TechnomancerClient {
         if(!techno.parentid) {
           //fetch tokens where this token is parent
           const projections:TechTechnomancer[] = await this.supabaseProvider.fetchTechnomancersByParentId(techno.id);
-          projections.forEach(async (p) => {
+          for(const p of projections){
             await this.handleProjectionNamed(p, name, block, ts);
-          });          
+          };          
         }
 
         //awesome minted, callback, get some story going

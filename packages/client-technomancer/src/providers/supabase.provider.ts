@@ -2,10 +2,11 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 import {
     elizaLogger,
+    stringToUuid,
+    UUID,
 } from "@elizaos/core";
 import { DataIndex, HydratedTechTechnomancerHistory, TechCombinationDescription, TechCombinationName, TechLocation, TechLocationDescription, TechLocationHistory, TechLocationTransfer, TechSigil, TechTechnomancer, TechTechnomancerHistory, TechTechnomancerShort, TechTechnomancerTransfer, TechType, TechWisdom, WalletUser } from "../internal-types";
-import { ethers, id } from "ethers";
-import { technomancerEnvSchema } from "../environment";
+import { ethers } from "ethers";
 
 export class SupabaseProvider {
   private sb: SupabaseClient | undefined;
@@ -39,6 +40,26 @@ export class SupabaseProvider {
     }
 
     return 0;
+  }
+
+  async hack() {
+    // const {data} = await this.sb
+    // .from("techLocation")
+    // .select("*");
+
+    // for(const d of data) {
+    //   const uuid = stringToUuid(d.id);
+    //   const image = `ipfs://bafybeiextf7dfskb7wnlmekw7oq7iew6ybrbm23r4sgucsvgwzwyaclpiy/${d.index}.jpg`;
+    //   await this.sb.from("techLocation").update({elizauuid:uuid,image:image}).eq("id", d.id);
+    // };
+
+    const {data} = await this.sb
+    .from("techTechnomancer")
+    .select("*");
+
+    for(const d of data) {
+      await this.updateTechnoUuid(d.id, stringToUuid(d.id));
+    };
   }
 
   async updateLastBlock(block: number): Promise<number> {
@@ -738,6 +759,18 @@ export class SupabaseProvider {
     }
 
     return techno;
+  }
+
+  async updateTechnoUuid(technoId: number, uuid: UUID) {
+    const { error } = await this.sb
+      .from("techTechnomancer")
+      .update({"elizauuid": uuid})
+      .eq("id",technoId);
+
+    if (error) {
+      elizaLogger.error(`Error updating UUID for technomancer with ID ${technoId} - ${error.message}`);
+      throw error;
+    }
   }
 
   async transferLocationTo(tokenId: bigint, from: number, to: number, block: number, ts: Date) : Promise<TechLocation>{
