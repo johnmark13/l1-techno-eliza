@@ -359,7 +359,7 @@ export const Chronicler: Action = {
 
         //here we could actually do somethin more novel...
 
-        callback(response);
+        await callback(response);
         return true;
     },
     examples:[]

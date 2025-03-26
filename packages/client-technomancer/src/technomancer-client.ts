@@ -870,15 +870,22 @@ export class TechnomancerClient {
 
         await this.supabaseProvider.addCombinationName(cn);
 
-        //update token
-        await this.supabaseProvider.updateTechnomancerName(tokenId, name);
+        //update the technomancer direct
+        let newName = name;
+        if(techno.parentid) {
+          let parent: TechTechnomancer = await this.supabaseProvider.fetchTechnomancerById(techno.parentid);
+          if(parent.name) {
+            newName = `${parent.name} - ${name}`;
+          }
+        }
+        await this.supabaseProvider.updateTechnomancerName(tokenId, newName);
 
         //update history
         const th = {
           technomancerid: techno.id,
           locationid: techno.locationid,
           sigilid: techno.sigilid,
-          name: name,
+          name: newName,
           description: techno.description,
           image: techno.image,
           owner: techno.owner, 
@@ -886,23 +893,28 @@ export class TechnomancerClient {
           blocktimestamp: ts
         } as TechTechnomancerHistory;
 
-        let parent: TechTechnomancer;
-        if(techno.wisdomid > -1) {
+        if(!!techno.wisdomid) {
           th.wisdomid = techno.wisdomid;
-        }
-        else {
-          parent = await this.supabaseProvider.findTechnoParentByType(techno.typeid);
         }
 
         await this.supabaseProvider.addTechnomancerHistory(th);
 
+        //kids
+        if(!techno.parentid) {
+          //fetch tokens where this token is parent
+          const projections:TechTechnomancer[] = await this.supabaseProvider.fetchTechnomancersByParentId(techno.id);
+          projections.forEach(async (p) => {
+            await this.handleProjectionNamed(p, name, block, ts);
+          });          
+        }
+
         //awesome minted, callback, get some story going
         let whatHappened = `Technomancer has a new name, `;
         if(existingName){
-          whatHappened = `${whatHappened} they were ${existingName.name}, they are now ${name}.`;
+          whatHappened = `${whatHappened} they were '${existingName.name}', they are now '${name}'.`;
         }
         else {
-          whatHappened = `${whatHappened} whoever they were before, they are now ${name}.`
+          whatHappened = `${whatHappened} whoever they were before, they are now '${name}'.`
         }
 
         if(techno.wisdomid > -1) {
@@ -910,7 +922,7 @@ export class TechnomancerClient {
         }
         else {
           if(parent?.name) {
-            whatHappened = `${whatHappened} Their OT is named ${parent.name} and so they are now ${parent.name}-${name}.`
+            whatHappened = `${whatHappened} Their OT is named ${parent.name} and so they are now '${parent.name}-${name}'.`
           }
         }
 
@@ -919,11 +931,46 @@ export class TechnomancerClient {
         } as TechChronicleMeta;
 
         await this.memoryMaker(CHRONICLE_EVENT.TECHNO_NAME, block, techno.locationid, techno.owner, whatHappened, techno.id, meta);
-
       }
       catch(error) {
         elizaLogger.error(`Error naming technomancer ${tokenId}`);
       }      
+    }
+
+    private async handleProjectionNamed(projection: TechTechnomancer, newOtName: string, block: number, ts: Date) {
+      const comb = await this.supabaseProvider.fetchTechnomancerCombinationString(projection.id);
+      const existing = await this.supabaseProvider.fetchCombinationName(comb);
+      let newProjectionName = existing ? `${newOtName} - ${existing.name}` : `${newOtName}`;
+
+      await this.supabaseProvider.updateTechnomancerName(BigInt(projection.tokenid), newProjectionName);
+
+      const th = {
+        technomancerid: projection.id,
+        locationid: projection.locationid,
+        sigilid: projection.sigilid,
+        name: newProjectionName,
+        description: projection.description,
+        image: projection.image,
+        owner: projection.owner,
+        block: block,
+        blocktimestamp: ts
+      } as TechTechnomancerHistory;
+
+      await this.supabaseProvider.addTechnomancerHistory(th);
+
+      let whatHappened = `Technomancer Projection has a new name, delivered through the Lichenwool Network from their OT`;
+      if (projection.name) {
+        whatHappened = `${whatHappened} they were '${projection.name}', they are now '${newProjectionName}'.`;
+      }
+      else {
+        whatHappened = `${whatHappened} whoever they were before, they are now '${newProjectionName}'.`;
+      }
+
+      const meta = {
+        name: newOtName,
+      } as TechChronicleMeta;
+
+      await this.memoryMaker(CHRONICLE_EVENT.TECHNO_NAME, block, projection.locationid, projection.owner, whatHappened, projection.id, meta);
     }
 
     private async handleCombinationDescribed(tokenId: bigint, combination: `0x${string}`, block: number, ts: Date) {

@@ -5,9 +5,9 @@ import {
 } from "@elizaos/core";
 import { DataIndex, HydratedTechTechnomancerHistory, TechCombinationDescription, TechCombinationName, TechLocation, TechLocationDescription, TechLocationHistory, TechLocationTransfer, TechSigil, TechTechnomancer, TechTechnomancerHistory, TechTechnomancerShort, TechTechnomancerTransfer, TechType, TechWisdom, WalletUser } from "../internal-types";
 import { ethers, id } from "ethers";
+import { technomancerEnvSchema } from "../environment";
 
 export class SupabaseProvider {
-  
   private sb: SupabaseClient | undefined;
 
   constructor(supabaseUrl:string, supabaseKey: string) {
@@ -269,6 +269,36 @@ export class SupabaseProvider {
       return null;
   }
 
+  async fetchTechnomancerCombinationString(id: number) : Promise<string> {
+    if (!this.sb) {
+      throw new Error(`Supbase not configured`);
+    }
+
+    elizaLogger.info(`Fetching technomancer combination string by ID  ${id}`);
+
+    const { data, error } = await this.sb
+      .from("techTechnomancer")
+        .select(`
+          techLocation(index),
+          techType(index),
+          techSigil(index)
+        `)
+        .eq("id", id);
+
+        if (error) {
+          elizaLogger.error(`Error fetching combination for ID ${id} - ${error.message}`);
+          throw error;
+        }
+    
+        let combination: string;
+    
+        if (data.length) {
+          combination = data[0].techLocation['index'] + data[0].techType['index'] + data[0].techSigil['index'];
+        } 
+  
+        return combination;
+  }
+
   async fetchTechnomancerById(id: number): Promise<TechTechnomancer> {
     if (!this.sb) {
       throw new Error(`Supbase not configured`);
@@ -323,6 +353,34 @@ export class SupabaseProvider {
     } 
 
     throw new Error(`No Technomancer found with tokenID ${tokenId}`);
+  }
+
+  async fetchTechnomancersByParentId(parentid: number): Promise<TechTechnomancer[]> {
+    if (!this.sb) {
+      throw new Error(`Supbase not configured`);
+    }
+
+    elizaLogger.info(`Fetching technomancer by parent ID  ${parentid}`);
+
+    const { data, error } = await this.sb
+        .from("techTechnomancer")
+        .select("*")
+        .eq("parentid", parentid);
+
+    if(error) {
+      elizaLogger.error(`Error fetching Technomancer by parent ID ${parentid} - ${error.message}`);
+      throw error;
+    }
+
+    let technos: TechTechnomancer[] = [];
+
+    data.forEach((rec) => {
+        const techno = rec as TechTechnomancer;
+        elizaLogger.info(`Got Technomancer ${techno.id} for parent ID ${parentid}`);
+        technos.push(techno);
+      });
+
+    return technos;
   }
 
   async fetchTechnoHistory(technomancerId: number): Promise<HydratedTechTechnomancerHistory[]> {
@@ -505,7 +563,8 @@ export class SupabaseProvider {
     const { data, error } = await this.sb
       .from("techTechnomancer")
       .select("*")
-      .eq("typeid", technoType);
+      .eq("typeid", technoType)
+      .is("parentid",null);
 
       if (error) {
         elizaLogger.error(`Error fetching parent for type ${technoType} - ${error.message}`);
