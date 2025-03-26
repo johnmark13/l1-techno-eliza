@@ -335,7 +335,7 @@ export class SupabaseProvider {
     const { data, error } = await this.sb
       .from("techTechnomancerHistory")
       .select(`
-        id, technomancerid, name, description, owner, block, blocktimestamp, created_at,
+        id, technomancerid, name, description, image, owner, block, blocktimestamp, created_at,
         techSigil(name),
         techWisdom(name),
         techLocation(name)
@@ -356,6 +356,7 @@ export class SupabaseProvider {
         blocktimestamp: d.blocktimestamp,
         description: d.description,
         name: d.name,
+        image: d.image,
         location: d.techLocation['name'],
         owner: d.owner,
         created_at: d.created_at,

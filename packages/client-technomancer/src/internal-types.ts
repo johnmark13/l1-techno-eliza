@@ -132,6 +132,7 @@ export class TechTechnomancerHistory {
   public technomancerid: number;
   public name: string;
   public description: string;
+  public image: string;
   public locationid: number;
   public sigilid: number;
   public wisdomid: number;
@@ -146,6 +147,7 @@ export class HydratedTechTechnomancerHistory {
   public technomancerid: number;
   public name: string;
   public description: string;
+  public image: string;
   public location: string;
   public sigil: string;
   public wisdom: string;

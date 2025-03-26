@@ -549,6 +549,7 @@ export class TechnomancerClient {
           technomancerid: insertedId,
           locationid: techLoc.id,
           sigilid: techSigil.id,
+          image: decoded.image,
           owner:owner, 
           block: block, 
           blocktimestamp: ts
@@ -632,6 +633,7 @@ export class TechnomancerClient {
           sigilid: techno.sigilid,
           name: techno.name,
           description: techno.description,
+          image: techno.image,
           owner: to, 
           block: block, 
           blocktimestamp: ts
@@ -878,6 +880,7 @@ export class TechnomancerClient {
           sigilid: techno.sigilid,
           name: name,
           description: techno.description,
+          image: techno.image,
           owner: techno.owner, 
           block: block, 
           blocktimestamp: ts
@@ -966,6 +969,7 @@ export class TechnomancerClient {
           sigilid: techno.sigilid,
           name: techno.name,
           description: description,
+          image: techno.image,
           owner: techno.owner, 
           block: block, 
           blocktimestamp: ts
