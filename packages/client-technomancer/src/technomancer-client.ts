@@ -874,8 +874,9 @@ export class TechnomancerClient {
 
         //update the technomancer direct
         let newName = name;
+        let parent: TechTechnomancer;
         if(techno.parentid) {
-          let parent: TechTechnomancer = await this.supabaseProvider.fetchTechnomancerById(techno.parentid);
+          parent = await this.supabaseProvider.fetchTechnomancerById(techno.parentid);
           if(parent.name) {
             newName = `${parent.name} - ${name}`;
           }
